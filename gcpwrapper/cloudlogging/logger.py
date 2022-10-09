@@ -26,18 +26,18 @@ class Logger:
         logging.NOTSET: 'NOTSET'
     }
     
-    def __init__(
-        self,
-        application_name: str,
-        correlation_id: str='',
-        container_name: str='default',
-        set_level: str='INFO',
-        local_log: bool=False,
-        sink: str = "default",
-        system_log: str='SYSTEM SERVICE',
-        **kwargs
-        ):
-        self._application_name = application_name
+    def __init__(self,
+                 app_name: str,
+                 correlation_id: str='',
+                 container_name: str='default',
+                 set_level: str='INFO',
+                 local_log: bool=False,
+                 sink: str = "default",
+                 system_log: str='SYSTEM SERVICE',
+                 **kwargs
+                 ):
+        self._application_name = app_name
+        self._correlation_id = correlation_id
         self._local_log = local_log
         if set_level.upper() not in Logger.SEVERITIES.values():
             raise exceptions.InvalidSeverityException(set_level)
@@ -52,7 +52,7 @@ class Logger:
             logging.DEBUG: self._logger.debug
         }
         self._json_message = {
-            'applicationName': application_name,
+            'applicationName': app_name,
             'clientIP': socket.gethostbyname(socket.gethostname()),
             'containerName': container_name,
             'hostName': socket.gethostname(),
@@ -62,7 +62,6 @@ class Logger:
             'threadID': threading.current_thread().ident
         }
         if correlation_id:
-            self._correlation_id = correlation_id 
             self._json_message['correlationID'] = correlation_id
             
         if kwargs:
@@ -117,10 +116,9 @@ class Logger:
             stream_handler = logging.StreamHandler(sys.stdout)
         else:
             log_client = gcp_log.Client()
-            stream_handler = handlers.CloudLoggingHandler(
-                log_client,
-                name=self._application_name
-                )
+            stream_handler = handlers.CloudLoggingHandler(log_client,
+                                                          name=self._app_name
+                                                          )
         logger.addHandler(stream_handler)
         return logger
     
@@ -135,12 +133,13 @@ class Logger:
             prefix = f'[{caller.filename}: {caller.lineno}]'
             msg = json_message['message']
             severity = json_message['severity']
-            self._loggers[level](
-                f'{severity} - {prefix} {msg}',
-                exc_info=exc_info
-                )
+            self._loggers[level](f'{severity} - {prefix} {msg}',
+                                 exc_info=exc_info
+                                 )
         else:
-            self._loggers[level](
-                json.dumps(json_message, sort_keys=True, default=str),
-                exc_info=exc_info
-                )
+            self._loggers[level](json.dumps(json_message,
+                                            sort_keys=True,
+                                            default=str
+                                            ),
+                                 exc_info=exc_info
+                                 )
