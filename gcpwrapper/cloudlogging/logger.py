@@ -36,7 +36,7 @@ class Logger:
                  system_log: str='SYSTEM SERVICE',
                  **kwargs
                  ):
-        self._application_name = app_name
+        self._app_name = app_name
         self._correlation_id = correlation_id
         self._local_log = local_log
         if set_level.upper() not in Logger.SEVERITIES.values():
@@ -110,7 +110,7 @@ class Logger:
         self._log(logging.CRITICAL, message, **kwargs)
     
     def _create_logger(self) -> logging.Logger:
-        logger = logging.getLogger(self._application_name)
+        logger = logging.getLogger(self._app_name)
         logger.setLevel(self._log_level)
         if self._local_log:
             stream_handler = logging.StreamHandler(sys.stdout)
